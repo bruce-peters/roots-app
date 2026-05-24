@@ -17,7 +17,7 @@ import {
 } from "../_shared/active-interview.ts";
 
 // Minimum new transcript chars since last suggestion before we'll fire again.
-const SUGGEST_DELTA_CHARS = 5;
+const SUGGEST_DELTA_CHARS = 20;
 // Minimum wall-clock gap between suggestions, regardless of delta.
 const SUGGEST_MIN_INTERVAL_MS = 1_000;
 

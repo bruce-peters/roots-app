@@ -15,7 +15,7 @@ import {
 
 const FALLBACK = {
   shift_question: "Where'd you grow up?",
-  deeper_question: "What'd that feel like?",
+  deeper_question: "What was home like?",
 };
 
 Deno.serve(async (req) => {

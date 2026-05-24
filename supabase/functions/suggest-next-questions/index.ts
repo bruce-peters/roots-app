@@ -18,7 +18,7 @@ import {
 
 const FALLBACK = {
   shift_question: "Where'd you grow up?",
-  deeper_question: "What'd that feel like?",
+  deeper_question: "What was home like?",
 };
 
 interface Person {
@@ -54,23 +54,24 @@ Hard rules you never break:
 - Never repeat a thread the transcript has already exhausted.
 - Never invent facts. If the transcript says "my mother", do not name her.
 - Never use the words "remember", "memory", or "feel" — they signal to the subject that they are being interviewed and make them retreat into self-consciousness.
+- Never ask about smells unless the transcript itself has already mentioned a smell. Smell questions are a cliché of oral history interviewing and feel like a formula.
 - Never name the chapter; name the thing inside it. Not "your marriage" — "that wedding day." Not "your childhood" — "the house you grew up in." One concrete noun opens a door; a category label closes one.`;
 
   const examples = `Examples of the quality bar:
 
 Transcript fragment: (empty — session just beginning)
-  deeper: "What'd home smell like?"         (23) — one sensory door from their earliest life
-  shift:  "Tell me about your mother."      (25) — no transcript yet, so pick the most universal bridge
+  deeper: "What was home like?"       (19) — grounds them in the earliest concrete scene
+  shift:  "Who raised you?"           (15) — no transcript yet, so pick the most universal bridge
 
 Transcript fragment: "...we used to walk to the bakery on Mulberry on Sundays, my father would carry me on his shoulders..."
-  deeper: "What'd that bakery smell like?"  (30) — anchors in the one charged noun (bakery)
+  deeper: "What'd he buy you?"        (18) — anchors in the concrete moment (him, the bakery, the thing)
   bridge: father is mentioned but his life is unexplored → work-life chapter
-  shift:  "What'd your father do for work?" (31) — pivots via "father" into an untouched chapter, not a cold jump
+  shift:  "What was his job?"         (17) — pivots via "father" into an untouched chapter, not a cold jump
 
 Transcript fragment: "I met Sal at a dance hall in '52. He couldn't dance for nothing."
-  deeper: "What was he wearing that night?" (29) — puts them inside the exact scene
+  deeper: "What was he wearing?"      (20) — puts them inside the exact scene
   bridge: "dance hall in '52" implies a whole life before Sal that's untouched → where she was living, what she was doing
-  shift:  "Where were you living back then?" (31) — bridges via the year/setting into the pre-marriage chapter
+  shift:  "Where were you then?"      (20) — bridges via the year/setting into the pre-marriage chapter
 
 Bad examples (do NOT do this):
   "First job after the war?"              — cold jump, no connection to the dance-hall transcript
@@ -108,7 +109,7 @@ Think carefully, then return ONE JSON object and nothing else, in this exact sha
 
 How to write each question:
 - deeper_question: Find the single most charged concrete noun in the transcript — a name, a place, a smell, an object — and ask the one question that puts them inside that moment for 30 seconds. If the transcript is empty, pick ONE sensory door from their early life and ask what it smelled or sounded like. Never open with "What do you remember about" — name the thing directly.
-- shift_question: Use the `bridge` detail to step from where they are into the `unopened_chapter`. The question should feel like a natural follow-on, not a gear change — as if you noticed a word they said and followed it somewhere new. The listener should not feel the interview pivoting; they should feel it deepening in a new direction. Name the concrete noun inside the new chapter, never the chapter itself.
+- shift_question: Use the [bridge] detail to step from where they are into the [unopened_chapter]. The question should feel like a natural follow-on, not a gear change — as if you noticed a word they said and followed it somewhere new. The listener should not feel the interview pivoting; they should feel it deepening in a new direction. Name the concrete noun inside the new chapter, never the chapter itself.
 
 HARD CONSTRAINTS
 - Each question MUST be 32 characters or fewer (including punctuation). Count before you answer. If over, rewrite shorter.

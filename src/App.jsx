@@ -20,8 +20,10 @@ function SplashScreen({ onDone }) {
   function dismiss() {
     if (timerRef.current) return
     timerRef.current = setTimeout(() => {}, 0) // mark as dismissed
-    setFading(true)
-    setTimeout(onDone, 450)
+    setTimeout(() => {
+      setFading(true)
+      setTimeout(onDone, 450)
+    }, 300)
   }
 
   useEffect(() => {

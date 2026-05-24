@@ -393,6 +393,8 @@ function TimelineTab({ entries, personId, hasAny }) {
 }
 
 function MemoriesTab({ memories, personId, hasAny }) {
+  const [activeTag, setActiveTag] = useState(null)
+
   if (!hasAny) {
     return (
       <EmptyState
@@ -404,20 +406,28 @@ function MemoriesTab({ memories, personId, hasAny }) {
   if (memories.length === 0) {
     return <EmptyState title="No matches in memories." body="" small />
   }
-  const allTags = [...new Set(memories.flatMap((m) => m.tags))].slice(0, 4)
+  const allTags = [...new Set(memories.flatMap((m) => m.tags))]
+  const visible = activeTag ? memories.filter((m) => m.tags.includes(activeTag)) : memories
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          <Badge tone="burgundy">All · {memories.length}</Badge>
+          <button onClick={() => setActiveTag(null)}>
+            <Badge tone={activeTag === null ? 'burgundy' : 'ink'}>All · {memories.length}</Badge>
+          </button>
           {allTags.map((t) => (
-            <Badge key={t} tone="ink">
-              {t}
-            </Badge>
+            <button key={t} onClick={() => setActiveTag(activeTag === t ? null : t)}>
+              <Badge tone={activeTag === t ? 'burgundy' : 'ink'}>
+                {t}
+              </Badge>
+            </button>
           ))}
         </div>
       </div>
-      {memories.map((m) => (
+      {visible.length === 0 && (
+        <EmptyState title={`No memories tagged "${activeTag}".`} body="" small />
+      )}
+      {visible.map((m) => (
         <Link key={m.id} to={`/person/${personId}/memory/${m.id}`}>
           <Card className="p-4">
             <div className="flex items-start justify-between gap-3">
@@ -489,7 +499,7 @@ function InterviewsTab({ interviews, personId, hasAny }) {
             <div className="flex-1 min-w-0">
               <div className="font-serif text-[16px] text-ink truncate">{it.date}</div>
               <div className="mt-1 flex items-center gap-2">
-                {it.active ? (
+                {it.status === 'recording' ? (
                   <>
                     <span className="h-1.5 w-1.5 rounded-full bg-burgundy animate-pulse" />
                     <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-burgundy">
