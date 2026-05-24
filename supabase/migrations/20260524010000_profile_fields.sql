@@ -9,5 +9,4 @@ alter table public.people
 -- Add session-level metadata to interviews.
 
 alter table public.interviews
-  add column if not exists topic    text,
   add column if not exists duration text;

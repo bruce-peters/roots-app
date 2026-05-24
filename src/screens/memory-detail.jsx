@@ -171,7 +171,7 @@ export default function MemoryDetailScreen() {
                   {source.date}
                 </Link>
                 <div className="font-serif italic text-[13px] text-ink-3 mt-0.5">
-                  {source.date} · {source.duration}
+                  {source.date}
                 </div>
               </div>
             )}

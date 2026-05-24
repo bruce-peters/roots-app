@@ -426,3 +426,13 @@ entrypoint = "./functions/get-interview-questions/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/get-interview-started/index.ts"
+
+[functions.suggest-next-questions]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/suggest-next-questions/index.ts"
+
+[functions.process-interview]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/process-interview/index.ts"

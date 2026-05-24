@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '@/lib/data-context'
+import { supabase } from '@/lib/supabase'
 import { themeById } from '@/lib/themes'
 import { MButton as Button } from '@/components/mantle'
 import { Icon, LiveDot, Waveform } from '@/components/icons'
@@ -11,28 +12,14 @@ function fmt(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-const SAMPLE_ANSWERS = [
-  'She paused for a long moment, then started softly.',
-  'A small laugh, then: it was just before sunrise.',
-  'I held my breath, listening to the kettle in the background.',
-  "Her hands moved while she talked, like she was kneading dough.",
-  'She closed her eyes. The room got very still.',
-  'A long sigh. Then a smile I could hear through the line.',
-  'She corrected herself twice, looking for the right word.',
-  'It came out in a whisper, like it cost her something.',
-  'She laughed, and I laughed, and then she was crying a little.',
-  'She tapped the table to keep time with the story.',
-  'Three sentences. Then she just looked out the window.',
-  'A small story I had never heard before.',
-]
-
 export default function RecordingScreen() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { people, addInterview } = useData()
+  const { people, updateInterview } = useData()
   const person = people.find((p) => p.id === id)
   const themeId = location.state?.themeId ?? 'becoming-a-mother'
+  const interviewId = location.state?.interviewId
   const theme = themeById(themeId)
 
   const [elapsed, setElapsed] = useState(0)
@@ -57,24 +44,12 @@ export default function RecordingScreen() {
   function endSession() {
     if (ending) return
     setEnding(true)
-    const seconds = Math.max(60, Math.floor((Date.now() - start.current) / 1000))
-    const usedQs = theme.questions.slice(0, Math.min(theme.questions.length, 5))
-    const transcript = usedQs.map((q, i) => {
-      const stamp = fmt(Math.floor(((i + 1) * seconds) / (usedQs.length + 1)))
-      return {
-        t: `00:${stamp}`,
-        q,
-        a: SAMPLE_ANSWERS[i % SAMPLE_ANSWERS.length],
-        tags: theme.tags.slice(0, 2),
-      }
-    })
-    const interview = addInterview({
-      personId: person.id,
-      duration: fmt(seconds),
-      transcript,
-    })
+    updateInterview(interviewId, { active: false })
+    supabase.functions
+      .invoke('process-interview', { body: { interviewId } })
+      .catch(console.error)
     setTimeout(() => {
-      navigate(`/person/${person.id}/interview/${interview.id}`, { replace: true })
+      navigate(`/person/${person.id}/interview/${interviewId}`, { replace: true })
     }, 350)
   }
 

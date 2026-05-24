@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Portrait } from '@/components/portrait'
 import { TopBar } from '@/components/top-bar'
 import { Icon, ChapterRule } from '@/components/icons'
+import PhotoUpload from '@/components/photo-upload'
 import { cn } from '@/lib/utils'
 
 function Stat({ n, label }) {
@@ -43,6 +44,7 @@ export default function PersonScreen() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const [photoUploadOpen, setPhotoUploadOpen] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setSkeleton(false), 240)
@@ -86,20 +88,6 @@ export default function PersonScreen() {
         (it) => matches(it.date, q)
       )
     : interviews
-
-  const totalHours =
-    Math.round(
-      (interviews.reduce((sum, it) => {
-        const parts = String(it.duration).split(':').map(Number)
-        const secs =
-          parts.length === 2
-            ? parts[0] * 60 + parts[1]
-            : parts[0] * 3600 + parts[1] * 60 + parts[2]
-        return sum + secs
-      }, 0) /
-        3600) *
-        10
-    ) / 10
 
   return (
     <div className="paper-bg min-h-screen flex flex-col">
@@ -163,8 +151,16 @@ export default function PersonScreen() {
       )}
 
       <div className="px-5 pb-3">
-        <div className="rounded-2xl overflow-hidden shadow-photo">
+        <div className="relative rounded-2xl overflow-hidden shadow-photo group">
           <Portrait person={person} ratio="16/10" />
+          {/* Camera button — tappable overlay to change the portrait photo */}
+          <button
+            onClick={() => setPhotoUploadOpen(true)}
+            aria-label="Change portrait photo"
+            className="absolute bottom-3 right-3 h-9 w-9 rounded-full bg-ink/70 backdrop-blur-sm flex items-center justify-center text-paper-50 opacity-80 hover:opacity-100 transition"
+          >
+            <Icon.Camera width="16" height="16" />
+          </button>
         </div>
         <div className="pt-4">
           <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-ink-3">
@@ -184,8 +180,6 @@ export default function PersonScreen() {
             <Stat n={interviews.length} label="sessions" />
             <span className="h-6 w-px bg-paper-400" />
             <Stat n={memories.length} label="memories" />
-            <span className="h-6 w-px bg-paper-400" />
-            <Stat n={`${totalHours}h`} label="archived" />
           </div>
 
           {searchOpen && (
@@ -285,6 +279,10 @@ export default function PersonScreen() {
             </div>
           </div>
         </div>
+      )}
+
+      {photoUploadOpen && (
+        <PhotoUpload person={person} onClose={() => setPhotoUploadOpen(false)} />
       )}
     </div>
   )
@@ -444,13 +442,6 @@ function InterviewsTab({ interviews, personId, hasAny }) {
             <div className="flex-1 min-w-0">
               <div className="font-serif text-[16px] text-ink truncate">{it.date}</div>
               <div className="mt-1 flex items-center gap-2">
-                <span className="flex items-center gap-1 text-ink-3">
-                  <Icon.Clock width="11" height="11" />
-                  <span className="font-mono text-[10px] tracking-[0.1em] uppercase">
-                    {it.duration}
-                  </span>
-                </span>
-                <span className="h-1 w-1 rounded-full bg-ink-4" />
                 <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-ink-3">
                   {it.answered}/{it.questions} answered
                 </span>

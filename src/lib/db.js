@@ -8,7 +8,7 @@
  *  - public.people  : id (uuid), name, nick, relation, place, dob (date),
  *                     memories jsonb, timeline jsonb
  *  - public.interviews : id (uuid), person_id, time (timestamptz),
- *                        transcript text, duration,
+ *                        transcript text,
  *                        active, started, shift_question, deeper_question
  *
  * App shape vs DB shape:
@@ -43,6 +43,7 @@ function rowToPerson(row, interviewsForPerson) {
     sessions: interviewsForPerson.length,
     memories: memories.length,
     hours: 0, // not stored; could be derived from duration later
+    photo_url: row.photo_url || null,
   }
 }
 
@@ -56,7 +57,6 @@ function rowToInterview(row, n) {
       day: '2-digit',
       year: 'numeric',
     }),
-    duration: row.duration || '00:00',
     status: 'transcribed',
     active: row.active ?? false,
     started: row.started ?? false,
@@ -132,8 +132,46 @@ export async function insertPerson(person) {
     dob: person.born ? `${person.born}-01-01` : null,
     memories: [],
     timeline: [],
+    photo_url: person.photo_url || null,
   })
   if (error) throw error
+}
+
+/**
+ * Upload a photo file to the profile-photos bucket and return the public URL.
+ * Path: profile-photos/{personId}/{uuid}.{ext}
+ * If the bucket is missing (e.g. migration not yet pushed) it tries to create
+ * it once before retrying the upload.
+ */
+export async function uploadProfilePhoto(personId, file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+  const path = `${personId}/${crypto.randomUUID()}.${ext}`
+
+  async function attemptUpload() {
+    const { error } = await supabase.storage
+      .from('profile-photos')
+      .upload(path, file, { upsert: true, contentType: file.type })
+    return error
+  }
+
+  let upErr = await attemptUpload()
+
+  // If the bucket doesn't exist yet, create it then retry once.
+  if (upErr && upErr.message?.toLowerCase().includes('bucket not found')) {
+    await supabase.storage.createBucket('profile-photos', { public: true })
+    upErr = await attemptUpload()
+  }
+
+  if (upErr) throw upErr
+  const { data } = supabase.storage.from('profile-photos').getPublicUrl(path)
+  return data.publicUrl
+}
+
+/**
+ * Persist a photo URL on a person row.
+ */
+export async function updatePersonPhoto(personId, photoUrl) {
+  await _patchPerson(personId, { photo_url: photoUrl })
 }
 
 export async function deletePerson(id) {
@@ -162,18 +200,47 @@ export async function upsertPersonTimeline(personId, timelineArray) {
 // ─── interview writes ────────────────────────────────────────────────────────
 
 export async function insertInterview(interview, transcript) {
+  // Explicitly deactivate any lingering active interview first.
+  // The DB trigger (interviews_enforce_single_active) does this too, but it
+  // requires SECURITY DEFINER privileges to UPDATE as the anon role — belt
+  // and suspenders here avoids a 409 conflict if that ever lags or is missing.
+  await supabase.from('interviews').update({ active: false }).eq('active', true)
+
   const { error } = await supabase.from('interviews').insert({
     id: interview.id,
     person_id: interview.personId,
     time: new Date().toISOString(),
-    duration: interview.duration || null,
     transcript: typeof transcript === 'string' ? transcript : '',
-    active: true, // new interviews are always the active one; trigger deactivates any prior
+    active: true,
   })
+  if (error) throw error
+}
+
+export async function updateInterview(id, patch) {
+  const dbPatch = {}
+  if (typeof patch.transcript === 'string') dbPatch.transcript = patch.transcript
+  if (patch.active != null) dbPatch.active = patch.active
+  const { error } = await supabase.from('interviews').update(dbPatch).eq('id', id)
   if (error) throw error
 }
 
 export async function deleteInterview(id) {
   const { error } = await supabase.from('interviews').delete().eq('id', id)
   if (error) throw error
+}
+
+/**
+ * Fetch the transcript text for a single interview.
+ * Used by the transcript screen to poll until the AI-generated
+ * transcript becomes available after a session.
+ * Returns the transcript string, or null if the row isn't found.
+ */
+export async function fetchInterviewTranscript(id) {
+  const { data, error } = await supabase
+    .from('interviews')
+    .select('transcript')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return typeof data?.transcript === 'string' ? data.transcript : null
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '@/lib/data-context'
-import { MButton as Button } from '@/components/mantle'
 import { Avatar } from '@/components/portrait'
 import { TopBar } from '@/components/top-bar'
 import { Icon } from '@/components/icons'
@@ -32,9 +31,12 @@ export default function NewInterviewScreen() {
           <p className="font-serif italic text-[14px] text-ink-3 mt-2">
             Add someone first — the rest follows.
           </p>
-          <Button className="mt-6" onClick={() => navigate('/person/new')}>
+          <button
+            className="mt-6 h-12 px-6 rounded-full bg-burgundy text-paper-50 font-serif text-[16px]"
+            onClick={() => navigate('/person/new')}
+          >
             Add someone
-          </Button>
+          </button>
         </div>
       </div>
     )
@@ -62,7 +64,7 @@ export default function NewInterviewScreen() {
         </p>
       </div>
 
-      <div className="px-5 pt-3 pb-2 flex flex-col gap-3">
+      <div className="px-5 pt-3 pb-32 flex flex-col gap-3">
         {people.map((p) => {
           const pSessions = interviews.filter((it) => it.personId === p.id).length
           return (
@@ -108,18 +110,19 @@ export default function NewInterviewScreen() {
         })}
       </div>
 
-      <div className="mt-auto px-5 pt-6 pb-6 border-t border-paper-400/60 bg-paper-50/60">
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={() =>
-            navigate('/connect', { state: { personId: sel.id } })
-          }
-        >
-          Start interview with {sel.name.split(' ')[0]}
-        </Button>
-        <div className="text-center mt-2 font-mono text-[10px] tracking-[0.14em] uppercase text-ink-3">
-          Roots device must be powered on
+      <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
+        <div className="mx-auto max-w-[430px] px-5 pb-7 flex justify-center">
+          <button
+            onClick={() => navigate('/connect', { state: { personId: sel.id } })}
+            className="pointer-events-auto h-16 px-6 rounded-full bg-ink text-paper-50 shadow-[0_10px_28px_-10px_rgba(43,31,21,.6)] flex items-center gap-3"
+          >
+            <span className="h-9 w-9 rounded-full bg-burgundy flex items-center justify-center">
+              <Icon.Mic width="18" height="18" />
+            </span>
+            <span className="font-serif text-[17px]">
+              Start with {sel.name.split(' ')[0]}
+            </span>
+          </button>
         </div>
       </div>
     </div>

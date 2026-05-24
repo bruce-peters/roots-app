@@ -53,6 +53,13 @@ export function DataProvider({ children }) {
     return person
   }, [])
 
+  const updatePersonPhoto = useCallback((personId, photoUrl) => {
+    setPeople((prev) =>
+      prev.map((p) => (p.id === personId ? { ...p, photo_url: photoUrl } : p))
+    )
+    db.updatePersonPhoto(personId, photoUrl).catch(console.error)
+  }, [])
+
   const deletePerson = useCallback((id) => {
     setPeople((prev) => prev.filter((p) => p.id !== id))
     setMemories((prev) => prev.filter((m) => m.personId !== id))
@@ -192,19 +199,27 @@ export function DataProvider({ children }) {
 
   // ── interviews ────────────────────────────────────────────────────────────
 
+  const updateInterview = useCallback((id, patch) => {
+    setInterviews((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
+    )
+    if (typeof patch.transcript === 'string') {
+      setTranscripts((prev) => ({ ...prev, [id]: patch.transcript }))
+    }
+    db.updateInterview(id, patch).catch(console.error)
+  }, [])
+
   const addInterview = useCallback(
     (input) => {
       const id = crypto.randomUUID()
       const personInterviews = interviews.filter((it) => it.personId === input.personId)
       const n = personInterviews.length + 1
-      const duration = input.duration || '00:00'
       const transcript = typeof input.transcript === 'string' ? input.transcript : ''
       const interview = {
         id,
         personId: input.personId,
         n,
         date: input.date || todayLabel() + ', ' + new Date().getFullYear(),
-        duration,
         status: 'transcribed',
       }
       setInterviews((prev) => [interview, ...prev])
@@ -234,6 +249,7 @@ export function DataProvider({ children }) {
       transcripts,
       addPerson,
       deletePerson,
+      updatePersonPhoto,
       addMemory,
       updateMemory,
       deleteMemory,
@@ -241,6 +257,7 @@ export function DataProvider({ children }) {
       updateTimelineEntry,
       deleteTimelineEntry,
       addInterview,
+      updateInterview,
     }),
     [
       loading,
@@ -251,6 +268,7 @@ export function DataProvider({ children }) {
       transcripts,
       addPerson,
       deletePerson,
+      updatePersonPhoto,
       addMemory,
       updateMemory,
       deleteMemory,
@@ -258,6 +276,7 @@ export function DataProvider({ children }) {
       updateTimelineEntry,
       deleteTimelineEntry,
       addInterview,
+      updateInterview,
     ]
   )
 

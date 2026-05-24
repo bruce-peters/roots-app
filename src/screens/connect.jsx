@@ -7,7 +7,7 @@ import { Icon, LiveDot } from '@/components/icons'
 export default function ConnectScreen() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { people } = useData()
+  const { people, addInterview } = useData()
 
   const personId = location.state?.personId ?? people[0]?.id
   const themeId = location.state?.themeId ?? 'becoming-a-mother'
@@ -22,8 +22,9 @@ export default function ConnectScreen() {
   ]
 
   function begin() {
+    const interview = addInterview({ personId: person.id, transcript: '' })
     navigate(`/person/${person.id}/recording`, {
-      state: { themeId: theme.id },
+      state: { themeId: theme.id, interviewId: interview.id },
     })
   }
 

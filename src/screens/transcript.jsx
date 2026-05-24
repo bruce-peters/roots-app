@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useData } from '@/lib/data-context'
+import * as db from '@/lib/db'
 import { Portrait } from '@/components/portrait'
 import { TopBar } from '@/components/top-bar'
 import { Icon, Waveform } from '@/components/icons'
@@ -22,10 +23,12 @@ function fmt(seconds) {
 export default function TranscriptScreen() {
   const { id, interviewId } = useParams()
   const navigate = useNavigate()
-  const { people, interviews, transcripts } = useData()
+  const { people, interviews, transcripts, updateInterview } = useData()
 
   const person = people.find((p) => p.id === id)
   const it = interviews.find((i) => i.id === interviewId)
+
+  // Pull transcript from context; fall back to empty string.
   const transcript = transcripts[interviewId] ?? ''
 
   const total = useMemo(() => parseDuration(it?.duration), [it])
@@ -35,6 +38,37 @@ export default function TranscriptScreen() {
   const [toast, setToast] = useState('')
   const raf = useRef(null)
   const lastTick = useRef(null)
+
+  // ── transcript polling ──────────────────────────────────────────────────
+  // Poll Supabase every 3 s until a non-empty transcript arrives.
+  // This handles the common case where the AI is still generating the
+  // transcript when the user navigates here right after a session ends.
+  useEffect(() => {
+    if (!interviewId) return
+    if (transcript) return // already have it; nothing to do
+
+    let cancelled = false
+
+    async function poll() {
+      try {
+        const text = await db.fetchInterviewTranscript(interviewId)
+        if (cancelled) return
+        if (text) {
+          updateInterview(interviewId, { transcript: text })
+        }
+      } catch (err) {
+        console.error('transcript poll error', err)
+      }
+    }
+
+    // Fire once immediately, then every 3 s.
+    poll()
+    const timer = setInterval(poll, 3000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [interviewId, transcript, updateInterview])
 
   useEffect(() => {
     if (!playing) {
@@ -146,7 +180,7 @@ export default function TranscriptScreen() {
           </div>
           <div className="absolute left-3 right-3 bottom-3 flex items-center gap-3">
             <span className="font-mono text-[10px] text-paper-50 tracking-[0.14em] bg-ink/45 px-2 py-0.5 rounded-full">
-              {fmt(position)} / {it.duration}
+              {fmt(position)}
             </span>
             <div className="flex-1 h-1 rounded-full bg-paper-50/30 overflow-hidden">
               <div
@@ -162,26 +196,24 @@ export default function TranscriptScreen() {
 
       <div className="px-5 pt-4 pb-2">
         <h2 className="font-serif text-[24px] leading-[1.1] text-ink">{it.date}</h2>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-ink-3">
-            {it.duration}
-          </span>
-        </div>
       </div>
 
-      {!transcript ? (
-        <div className="px-5 py-10 text-center">
-          <p className="font-serif italic text-[15px] text-ink-3">
-            This session has no transcript yet.
+      {/* Transcript body */}
+      <div className="px-5 pb-32">
+        {transcript ? (
+          transcript.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i} className="font-serif text-[15px] leading-[1.65] text-ink-2 mb-4">
+              {para}
+            </p>
+          ))
+        ) : (
+          <p className="font-serif italic text-[14px] text-ink-3">
+            Transcript is being processed…
           </p>
-        </div>
-      ) : (
-        <div className="px-5 pt-3 pb-32">
-          <p className="font-serif italic text-[16px] text-ink-2 leading-[1.65] whitespace-pre-wrap">
-            {transcript}
-          </p>
-        </div>
-      )}
+        )}
+      </div>
+
+
 
       {toast && (
         <div className="fixed top-16 left-0 right-0 flex justify-center pointer-events-none z-30">

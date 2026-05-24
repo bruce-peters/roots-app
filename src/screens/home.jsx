@@ -74,22 +74,21 @@ export default function HomeScreen() {
     <div className="paper-bg min-h-screen flex flex-col">
       <div className="px-5 pt-5 pb-3">
         <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-ink-3">Roots</div>
-        <div className="mt-1 flex items-end justify-between gap-3">
-          <h1 className="font-serif text-[32px] leading-[1.05] text-ink tracking-tight">
-            Your<br />
-            <span className="italic text-burgundy">people</span>.
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <h1 className="font-serif text-[26px] leading-[1.05] text-ink tracking-tight">
+            Your <span className="italic text-burgundy">people</span>.
           </h1>
           <button
             onClick={() => setSearchOpen((v) => !v)}
             className={cn(
-              'h-10 w-10 rounded-full border flex items-center justify-center transition shrink-0',
+              'h-9 w-9 rounded-full border flex items-center justify-center transition shrink-0',
               searchOpen
                 ? 'border-burgundy bg-paper-50 text-burgundy'
                 : 'border-paper-400 bg-paper-50/60 text-ink-2'
             )}
             aria-label="Search people"
           >
-            <Icon.Search width="18" height="18" />
+            <Icon.Search width="16" height="16" />
           </button>
         </div>
         {searchOpen ? (
@@ -101,24 +100,33 @@ export default function HomeScreen() {
             className="form-input mt-3"
           />
         ) : (
-          <p className="mt-3 font-serif italic text-[15px] text-ink-2 max-w-[28ch]">
+          <p className="mt-2 font-mono text-[10px] tracking-[0.18em] uppercase text-ink-3">
             {people.length === 0
-              ? 'Nobody yet. Start by adding someone you love.'
-              : `${people.length} ${people.length === 1 ? 'story' : 'stories'} in progress. ${totalMemories} ${totalMemories === 1 ? 'memory' : 'memories'} saved so far.`}
+              ? 'Nobody yet — add someone you love'
+              : `${people.length} ${people.length === 1 ? 'story' : 'stories'} · ${totalMemories} ${totalMemories === 1 ? 'memory' : 'memories'}`}
           </p>
         )}
       </div>
 
-      <div className="px-5 pb-4 flex items-center gap-2 overflow-x-auto no-scrollbar">
-        <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
-          All · {counts.all}
-        </FilterChip>
-        <FilterChip active={filter === 'family'} onClick={() => setFilter('family')}>
-          Family{counts.family ? ` · ${counts.family}` : ''}
-        </FilterChip>
-        <FilterChip active={filter === 'recent'} onClick={() => setFilter('recent')}>
-          Recent
-        </FilterChip>
+      <div className="px-5 pb-4 flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar grow">
+          <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
+            All · {counts.all}
+          </FilterChip>
+          <FilterChip active={filter === 'family'} onClick={() => setFilter('family')}>
+            Family{counts.family ? ` · ${counts.family}` : ''}
+          </FilterChip>
+        </div>
+        <button
+          onClick={() => setFilter(filter === 'recent' ? 'all' : 'recent')}
+          className={cn(
+            'shrink-0 inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.14em] uppercase transition',
+            filter === 'recent' ? 'text-burgundy' : 'text-ink-3'
+          )}
+          aria-label="Sort by recent"
+        >
+          <span>↓</span> Recent
+        </button>
       </div>
 
       <div className="px-5 grid grid-cols-2 gap-4 pb-32">
@@ -187,15 +195,20 @@ export default function HomeScreen() {
 
       {people.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
-          <div className="mx-auto max-w-[430px] px-5 pb-7 flex justify-center">
+          <div className="mx-auto max-w-[430px] px-5 pb-7 flex flex-col items-center gap-3">
+            {totalMemories === 0 && people[0] && (
+              <p className="font-serif italic text-[13px] text-ink-3 text-center max-w-[28ch]">
+                {people[0].name.split(' ')[0]} is waiting for their first story.
+              </p>
+            )}
             <button
               onClick={() => navigate('/new')}
-              className="pointer-events-auto h-16 px-6 rounded-full bg-ink text-paper-50 shadow-[0_10px_28px_-10px_rgba(43,31,21,.6)] flex items-center gap-3"
+              className="pointer-events-auto h-14 px-5 rounded-full bg-ink text-paper-50 shadow-[0_10px_28px_-10px_rgba(43,31,21,.6)] flex items-center gap-3"
             >
-              <span className="h-9 w-9 rounded-full bg-burgundy flex items-center justify-center">
-                <Icon.Mic width="18" height="18" />
+              <span className="h-8 w-8 rounded-full bg-burgundy flex items-center justify-center">
+                <Icon.Mic width="16" height="16" />
               </span>
-              <span className="font-serif text-[17px]">Start an interview</span>
+              <span className="font-serif text-[15px]">Start an interview</span>
             </button>
           </div>
         </div>
