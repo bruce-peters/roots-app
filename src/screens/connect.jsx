@@ -3,6 +3,7 @@ import { useData } from '@/lib/data-context'
 import { themeById } from '@/lib/themes'
 import { MButton as Button } from '@/components/mantle'
 import { Icon, LiveDot } from '@/components/icons'
+import { PageTransition } from '@/components/page-transition'
 
 export default function ConnectScreen() {
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ export default function ConnectScreen() {
   }
 
   return (
-    <div className="ink-bg min-h-screen flex flex-col text-paper-50 relative overflow-hidden">
+    <PageTransition className="ink-bg min-h-screen flex flex-col text-paper-50 relative overflow-hidden">
       <div className="px-5 pt-4 pb-3 flex items-center justify-between">
         <button onClick={() => navigate('/new')} className="text-paper-50/80">
           <Icon.Back width="22" height="22" />
@@ -96,6 +97,6 @@ export default function ConnectScreen() {
           Hand the phone to {firstName}, or tuck it in your pocket.
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

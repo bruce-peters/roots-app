@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '@/lib/data-context'
 import { supabase } from '@/lib/supabase'
 import { themeById } from '@/lib/themes'
+import { PageTransition } from '@/components/page-transition'
 import { MButton as Button } from '@/components/mantle'
 import { Icon, LiveDot, Waveform } from '@/components/icons'
 
@@ -35,26 +36,25 @@ export default function RecordingScreen() {
 
   if (!person) {
     return (
-      <div className="ink-bg min-h-screen flex items-center justify-center text-paper-50/80 font-serif italic">
+      <PageTransition className="ink-bg min-h-screen flex items-center justify-center text-paper-50/80 font-serif italic">
         Person not found.
-      </div>
+      </PageTransition>
     )
   }
 
   function endSession() {
     if (ending) return
     setEnding(true)
-    updateInterview(interviewId, { active: false })
-    supabase.functions
-      .invoke('process-interview', { body: { interviewId } })
-      .catch(console.error)
+    updateInterview(interviewId, { status: 'completed' })
+    // process-interview is now triggered server-side by upload-video once both
+    // the transcript and video file are available.
     setTimeout(() => {
       navigate(`/person/${person.id}/interview/${interviewId}`, { replace: true })
     }, 350)
   }
 
   return (
-    <div className="ink-bg min-h-screen flex flex-col text-paper-50">
+    <PageTransition className="ink-bg min-h-screen flex flex-col text-paper-50">
       <div className="px-5 pt-4 pb-3 flex items-center justify-between">
         <div className="w-6" />
         <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function RecordingScreen() {
           {fmt(elapsed)}
         </div>
         <div className="mt-2 font-mono text-[10px] tracking-[0.18em] uppercase text-paper-50/55">
-          {person.name} · {theme.title.replace(/\.$/, '')}
+          {person.name}
         </div>
 
         <div className="mt-8">
@@ -111,6 +111,6 @@ export default function RecordingScreen() {
           You can stop any time — even one good story is enough.
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

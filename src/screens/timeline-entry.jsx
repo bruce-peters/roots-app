@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '@/lib/data-context'
 import { MButton as Button } from '@/components/mantle'
 import { TopBar } from '@/components/top-bar'
+import { PageTransition } from '@/components/page-transition'
 import { Icon } from '@/components/icons'
 
 export default function TimelineEntryScreen() {
@@ -23,7 +24,7 @@ export default function TimelineEntryScreen() {
 
   if (!person || !entry) {
     return (
-      <div className="paper-bg min-h-screen flex items-center justify-center px-8 text-center">
+      <PageTransition className="paper-bg min-h-screen flex items-center justify-center px-8 text-center">
         <div>
           <p className="font-serif italic text-[16px] text-ink-2">Entry not found.</p>
           <button
@@ -33,7 +34,7 @@ export default function TimelineEntryScreen() {
             Go back
           </button>
         </div>
-      </div>
+      </PageTransition>
     )
   }
 
@@ -56,7 +57,7 @@ export default function TimelineEntryScreen() {
   }
 
   return (
-    <div className="paper-bg min-h-screen flex flex-col">
+    <PageTransition className="paper-bg min-h-screen flex flex-col">
       <TopBar
         left={
           <button onClick={() => navigate(`/person/${id}`)} className="text-ink-2">
@@ -77,7 +78,7 @@ export default function TimelineEntryScreen() {
         }
       />
 
-      <div className="px-5 pt-5 pb-32">
+      <div className="px-5 pt-5 pb-32 md:max-w-[680px] md:mx-auto md:w-full">
         {editing ? (
           <div className="flex flex-col gap-4">
             <Field label="Year">
@@ -179,7 +180,7 @@ export default function TimelineEntryScreen() {
           </>
         )}
       </div>
-    </div>
+    </PageTransition>
   )
 }
 

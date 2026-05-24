@@ -9,7 +9,7 @@
  *                     memories jsonb, timeline jsonb
  *  - public.interviews : id (uuid), person_id, time (timestamptz),
  *                        transcript text,
- *                        active, started, shift_question, deeper_question
+ *                        active, shift_question, deeper_question
  *
  * App shape vs DB shape:
  *  person.born  ↔ dob stored as "${year}-01-01"; read via new Date(dob).getUTCFullYear()
@@ -57,11 +57,12 @@ function rowToInterview(row, n) {
       day: '2-digit',
       year: 'numeric',
     }),
-    status: 'transcribed',
+    status: row.status ?? 'started',
     active: row.active ?? false,
-    started: row.started ?? false,
     shift_question: row.shift_question ?? null,
     deeper_question: row.deeper_question ?? null,
+    video: row.video ?? null,
+    transcriptWords: Array.isArray(row.transcript_words) ? row.transcript_words : [],
   }
 }
 
@@ -220,6 +221,7 @@ export async function updateInterview(id, patch) {
   const dbPatch = {}
   if (typeof patch.transcript === 'string') dbPatch.transcript = patch.transcript
   if (patch.active != null) dbPatch.active = patch.active
+  if (patch.status != null) dbPatch.status = patch.status
   const { error } = await supabase.from('interviews').update(dbPatch).eq('id', id)
   if (error) throw error
 }
@@ -230,17 +232,126 @@ export async function deleteInterview(id) {
 }
 
 /**
- * Fetch the transcript text for a single interview.
- * Used by the transcript screen to poll until the AI-generated
- * transcript becomes available after a session.
- * Returns the transcript string, or null if the row isn't found.
+ * Fetch just the video URL for a single interview.
+ * Used by the transcript screen to poll until the device has uploaded the recording.
+ * Returns the public URL string, or null if not yet available.
+ */
+export async function fetchInterviewVideo(id) {
+  const { data, error } = await supabase
+    .from('interviews')
+    .select('video')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return data?.video ?? null
+}
+
+// ─── chat (RAG) ──────────────────────────────────────────────────────────────
+
+/**
+ * Stream a RAG chat response from the /chat edge function.
+ *
+ *   personId   uuid | null — null = ask across all relatives
+ *   messages   [{ role: 'user'|'assistant', content: string }]
+ *   onSources  fn(sources[]) — fires once before any text deltas
+ *   onDelta    fn(text)      — fires repeatedly as the model streams
+ *   signal     optional AbortSignal
+ *
+ * Returns a promise that resolves when the stream is fully consumed.
+ */
+export async function streamChat({ personId, messages, onSources, onDelta, signal }) {
+  const url = import.meta.env.VITE_SUPABASE_URL
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  const res = await fetch(`${url}/functions/v1/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+    },
+    body: JSON.stringify({ personId, messages }),
+    signal,
+  })
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`chat ${res.status}: ${text}`)
+  }
+  const reader = res.body.getReader()
+  const dec = new TextDecoder()
+  let buf = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += dec.decode(value, { stream: true })
+    // SSE: event blocks split by blank line.
+    let idx
+    while ((idx = buf.indexOf('\n\n')) !== -1) {
+      const block = buf.slice(0, idx)
+      buf = buf.slice(idx + 2)
+      let event = 'message'
+      let data = ''
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event:')) event = line.slice(6).trim()
+        else if (line.startsWith('data:')) data += line.slice(5).trim()
+      }
+      if (!data) continue
+      try {
+        const j = JSON.parse(data)
+        if (event === 'sources') onSources?.(j)
+        else if (event === 'delta') onDelta?.(j.text ?? '')
+        else if (event === 'error') throw new Error(j.message || 'chat error')
+      } catch (e) {
+        if (event === 'error') throw e
+      }
+    }
+  }
+}
+
+/**
+ * Rebuild RAG chunks for a person. Fire-and-forget from the UI; the chat
+ * screen calls this once on mount when it spots an unindexed person.
+ */
+export async function reindexPerson(personId) {
+  const url = import.meta.env.VITE_SUPABASE_URL
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  await fetch(`${url}/functions/v1/embed-person`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+    },
+    body: JSON.stringify({ personId }),
+  })
+}
+
+/**
+ * Count of indexed chunks for a person — used to decide whether to trigger a
+ * reindex when the chat screen opens for the first time.
+ */
+export async function countChunksFor(personId) {
+  const { count, error } = await supabase
+    .from('chunks')
+    .select('id', { count: 'exact', head: true })
+    .eq('person_id', personId)
+  if (error) return 0
+  return count ?? 0
+}
+
+/**
+ * Fetch the transcript text + word timestamps for a single interview.
+ * Used by the transcript screen to poll until Whisper has finished.
+ * Returns { text: string|null, words: WordTimestamp[] }.
  */
 export async function fetchInterviewTranscript(id) {
   const { data, error } = await supabase
     .from('interviews')
-    .select('transcript')
+    .select('transcript, transcript_words')
     .eq('id', id)
     .single()
   if (error) throw error
-  return typeof data?.transcript === 'string' ? data.transcript : null
+  return {
+    text: typeof data?.transcript === 'string' ? data.transcript : null,
+    words: Array.isArray(data?.transcript_words) ? data.transcript_words : [],
+  }
 }

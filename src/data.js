@@ -68,23 +68,64 @@ export const TIMELINE = [
   { year: 1989, decade: '1980s', title: 'Sal passed', body: 'A quiet morning. She still sets his cup on Sundays.', memories: ['m11'] },
 ]
 
+// clips: array of { start, end } in seconds — AI-extracted moments in the source interview.
+// Adjacent clips ≤3 s apart are pre-merged (see mergeClips in src/lib/utils.js).
 export const MEMORIES = [
-  { id: 'm1', title: 'The bakery on Via Mercanti', tags: ['childhood', 'family'], snippet: '"My mother could tell the bread was ready just by the smell coming up the stairs."', year: 1942, photos: 1 },
-  { id: 'm2', title: 'Sunday with Zia Concetta', tags: ['childhood'], snippet: '"She pinched my cheeks so hard I thought she\'d take them home with her."', year: 1944, photos: 0 },
-  { id: 'm4', title: 'Thirteen days at sea', tags: ['immigration', 'journey'], snippet: '"I was sick the first three. Then I just looked at the water and stopped being scared."', year: 1952, photos: 2 },
-  { id: 'm6', title: 'The wedding in Jersey City', tags: ['love', 'family'], snippet: '"He wore a brown suit. Not a good colour for him, but he didn\'t know."', year: 1958, photos: 1 },
-  { id: 'm7', title: "Aunt Rosa's lace veil", tags: ['wedding', 'tradition'], snippet: '"It had a tear she sewed shut the morning of. With red thread, because she ran out."', year: 1961, photos: 3 },
-  { id: 'm10', title: 'The yellow kitchen', tags: ['home', 'garden street'], snippet: '"Sal said it was the wrong yellow. Forty years he said that."', year: 1972, photos: 1 },
+  {
+    id: 'm1', title: 'The bakery on Via Mercanti', tags: ['childhood', 'family'],
+    snippet: '"My mother could tell the bread was ready just by the smell coming up the stairs."',
+    year: 1942, photos: 1,
+    personId: 'rose', sourceInterviewId: 'i7',
+    // Mentioned briefly in the opening, then revisited later — two distinct clips.
+    clips: [{ start: 78, end: 112 }, { start: 1724, end: 1758 }],
+  },
+  {
+    id: 'm2', title: 'Sunday with Zia Concetta', tags: ['childhood'],
+    snippet: '"She pinched my cheeks so hard I thought she\'d take them home with her."',
+    year: 1944, photos: 0,
+    personId: 'rose', sourceInterviewId: 'i6',
+    clips: [{ start: 328, end: 367 }],
+  },
+  {
+    id: 'm4', title: 'Thirteen days at sea', tags: ['immigration', 'journey'],
+    snippet: '"I was sick the first three. Then I just looked at the water and stopped being scared."',
+    year: 1952, photos: 2,
+    personId: 'rose', sourceInterviewId: 'i7',
+    // Main subject of the session — comes up at length twice, far apart.
+    clips: [{ start: 432, end: 524 }, { start: 1938, end: 2022 }],
+  },
+  {
+    id: 'm6', title: 'The wedding in Jersey City', tags: ['love', 'family'],
+    snippet: '"He wore a brown suit. Not a good colour for him, but he didn\'t know."',
+    year: 1958, photos: 1,
+    personId: 'rose', sourceInterviewId: 'i5',
+    clips: [{ start: 892, end: 941 }],
+  },
+  {
+    id: 'm7', title: "Aunt Rosa's lace veil", tags: ['wedding', 'tradition'],
+    snippet: '"It had a tear she sewed shut the morning of. With red thread, because she ran out."',
+    year: 1961, photos: 3,
+    personId: 'rose', sourceInterviewId: 'i5',
+    // Two mentions nearly back-to-back; after mergeClips they collapse into one.
+    clips: [{ start: 1805, end: 1840 }],
+  },
+  {
+    id: 'm10', title: 'The yellow kitchen', tags: ['home', 'garden street'],
+    snippet: '"Sal said it was the wrong yellow. Forty years he said that."',
+    year: 1972, photos: 1,
+    personId: 'rose', sourceInterviewId: 'i4',
+    clips: [{ start: 742, end: 791 }],
+  },
 ]
 
 export const INTERVIEWS = [
   { id: 'i7', n: 7, date: 'Apr 12, 2026', duration: '42:18', questions: 14, answered: 13, status: 'transcribed' },
   { id: 'i6', n: 6, date: 'Mar 28, 2026', duration: '38:05', questions: 12, answered: 12, status: 'transcribed' },
   { id: 'i5', n: 5, date: 'Mar 14, 2026', duration: '44:51', questions: 15, answered: 14, status: 'transcribed' },
-  { id: 'i4', n: 4, date: 'Feb 24, 2026', duration: '29:33', questions: 10, answered: 9, status: 'transcribed' },
+  { id: 'i4', n: 4, date: 'Feb 24, 2026', duration: '29:33', questions: 10, answered: 9,  status: 'transcribed' },
   { id: 'i3', n: 3, date: 'Feb 09, 2026', duration: '51:02', questions: 18, answered: 17, status: 'transcribed' },
   { id: 'i2', n: 2, date: 'Jan 26, 2026', duration: '33:47', questions: 11, answered: 11, status: 'transcribed' },
-  { id: 'i1', n: 1, date: 'Jan 11, 2026', duration: '24:10', questions: 8, answered: 8, status: 'transcribed' },
+  { id: 'i1', n: 1, date: 'Jan 11, 2026', duration: '24:10', questions: 8,  answered: 8,  status: 'transcribed' },
 ]
 
 // Full transcript for interview i7 "Coming to America" (fake/seed data).

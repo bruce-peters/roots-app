@@ -70,8 +70,8 @@ curl -X POST "$SUPABASE_URL/functions/v1/process-transcript" \
 
 Upload the full session video at the end of an interview. Stores the file in
 the `interview-videos` Storage bucket under `<interview_id>/<timestamp>.<ext>`,
-saves the public URL to `interviews.video`, and flips `active` and `started`
-back to `false` (session closed).
+saves the public URL to `interviews.video`, and flips `active` back to `false`
+(session closed).
 
 - **Method:** `POST`
 - **Body:** `multipart/form-data` with a single `file` field.
@@ -195,43 +195,16 @@ Requires the `OPENAI_API_KEY` function secret.
 
 ---
 
-## `get-interview-started`
-
-Returns whether the active interview has been kicked off yet. The recording
-box polls this so it can power up its lights/motors the moment the app flips
-the session to "started".
-
-- **Method:** `GET`
-
-**Example:**
-
-```bash
-curl "$SUPABASE_URL/functions/v1/get-interview-started"
-```
-
-**Response:**
-
-```json
-{
-  "ok": true,
-  "interview_id": "…",
-  "started": false
-}
-```
-
----
-
 ## Setting up an active interview
 
 These functions all assume there's already a row in `interviews` with
-`active = true`. The app is responsible for creating that row (and toggling
-`started` to `true` when the user taps "Begin" on the Connect screen). A
-minimal SQL example:
+`active = true`. The app is responsible for creating that row when the user
+taps "Begin" on the Connect screen. A minimal SQL example:
 
 ```sql
 update public.interviews set active = false where active = true;
-insert into public.interviews (person_id, active, started)
-values ('<person uuid>', true, false);
+insert into public.interviews (person_id, active)
+values ('<person uuid>', true);
 ```
 
 ## Deploy
@@ -239,7 +212,7 @@ values ('<person uuid>', true, false);
 ```bash
 supabase db push
 supabase functions deploy \
-  process-transcript upload-video get-interview-questions get-interview-started \
+  process-transcript upload-video get-interview-questions \
   suggest-next-questions process-interview
 supabase secrets set OPENAI_API_KEY=sk-...
 ```

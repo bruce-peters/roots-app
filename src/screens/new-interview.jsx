@@ -5,6 +5,7 @@ import { Avatar } from '@/components/portrait'
 import { TopBar } from '@/components/top-bar'
 import { Icon } from '@/components/icons'
 import { cn } from '@/lib/utils'
+import { PageTransition } from '@/components/page-transition'
 
 export default function NewInterviewScreen() {
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ export default function NewInterviewScreen() {
 
   if (people.length === 0) {
     return (
-      <div className="paper-bg min-h-screen flex flex-col">
+      <PageTransition className="paper-bg min-h-screen flex flex-col">
         <TopBar
           left={
             <button onClick={() => navigate('/')} className="text-ink-2">
@@ -38,14 +39,14 @@ export default function NewInterviewScreen() {
             Add someone
           </button>
         </div>
-      </div>
+      </PageTransition>
     )
   }
 
   const sel = people.find((p) => p.id === selected) ?? people[0]
 
   return (
-    <div className="paper-bg min-h-screen flex flex-col">
+    <PageTransition className="paper-bg min-h-screen flex flex-col">
       <TopBar
         left={
           <button onClick={() => navigate('/')} className="text-ink-2">
@@ -55,7 +56,7 @@ export default function NewInterviewScreen() {
           title="New interview"
           sub="step 1 of 2"
       />
-      <div className="px-5 pt-4 pb-2">
+      <div className="px-5 pt-4 pb-2 md:max-w-[640px] md:mx-auto md:w-full">
         <h2 className="font-serif text-[26px] leading-[1.1] text-ink">
           Who are we listening to today?
         </h2>
@@ -64,7 +65,7 @@ export default function NewInterviewScreen() {
         </p>
       </div>
 
-      <div className="px-5 pt-3 pb-32 flex flex-col gap-3">
+      <div className="px-5 pt-3 pb-32 flex flex-col gap-3 md:max-w-[640px] md:mx-auto md:w-full">
         {people.map((p) => {
           const pSessions = interviews.filter((it) => it.personId === p.id).length
           return (
@@ -111,7 +112,7 @@ export default function NewInterviewScreen() {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
-        <div className="mx-auto max-w-[430px] px-5 pb-7 flex justify-center">
+        <div className="mx-auto max-w-[430px] md:max-w-[960px] px-5 pb-7 flex justify-center">
           <button
             onClick={() => navigate('/connect', { state: { personId: sel.id } })}
             className="pointer-events-auto h-16 px-6 rounded-full bg-ink text-paper-50 shadow-[0_10px_28px_-10px_rgba(43,31,21,.6)] flex items-center gap-3"
@@ -125,6 +126,6 @@ export default function NewInterviewScreen() {
           </button>
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

@@ -3,6 +3,9 @@
 // Uploads to the `interview-videos` storage bucket and saves the public URL
 // onto the active interview's `video` column. Also flips `active` off so the
 // session is considered closed.
+//
+// After the row is updated, fires process-interview as a background task so
+// Whisper alignment + memory extraction run automatically once the video lands.
 
 import {
   corsHeaders,
@@ -10,6 +13,9 @@ import {
   json,
   serviceClient,
 } from "../_shared/active-interview.ts";
+
+// deno-lint-ignore no-explicit-any
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -40,9 +46,19 @@ Deno.serve(async (req) => {
 
     const { error: updErr } = await db
       .from("interviews")
-      .update({ video: pub.publicUrl, active: false, started: false })
+      .update({ video: pub.publicUrl, status: "completed" })
       .eq("id", interview.id);
     if (updErr) throw updErr;
+
+    // Trigger process-interview in the background now that both the transcript
+    // and the video file are in place. Returns immediately to the device.
+    const processUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/process-interview`;
+    const p = fetch(processUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ interviewId: interview.id }),
+    }).catch(() => {});
+    if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(p);
 
     return json({ ok: true, interview_id: interview.id, video: pub.publicUrl });
   } catch (e) {

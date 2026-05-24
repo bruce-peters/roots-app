@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useData } from '@/lib/data-context'
 import { MButton as Button } from '@/components/mantle'
 import { TopBar } from '@/components/top-bar'
+import { PageTransition } from '@/components/page-transition'
 import { Icon, ChapterRule } from '@/components/icons'
 
 export default function AddPersonScreen() {
@@ -30,7 +31,7 @@ export default function AddPersonScreen() {
   }
 
   return (
-    <div className="paper-bg min-h-screen flex flex-col">
+    <PageTransition className="paper-bg min-h-screen flex flex-col">
       <TopBar
         left={
           <button onClick={() => navigate('/')} className="text-ink-2">
@@ -40,7 +41,7 @@ export default function AddPersonScreen() {
         title="Add someone"
         sub="a new chapter"
       />
-      <form onSubmit={onSubmit} className="flex-1 flex flex-col">
+      <form onSubmit={onSubmit} className="flex-1 flex flex-col md:max-w-[600px] md:w-full md:mx-auto">
         <div className="px-5 pt-4 pb-2">
           <h2 className="font-serif text-[26px] leading-[1.1] text-ink">
             Who would you like<br />to <span className="italic text-burgundy">remember</span>?
@@ -111,7 +112,7 @@ export default function AddPersonScreen() {
           </Button>
         </div>
       </form>
-    </div>
+    </PageTransition>
   )
 }
 

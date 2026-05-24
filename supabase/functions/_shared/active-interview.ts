@@ -25,7 +25,7 @@ export async function getActiveInterview(db: SupabaseClient) {
 // All functions have verify_jwt = false — no API key is required from callers.
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react'
 import { paletteFor, accentFor } from '@/lib/portrait'
+import { mergeClips } from '@/lib/utils'
 import * as db from '@/lib/db'
 
 const DataContext = createContext(null)
@@ -15,6 +16,8 @@ export function DataProvider({ children }) {
   const [interviews, setInterviews] = useState([])
   const [transcripts, setTranscripts] = useState({})
   const [loading, setLoading] = useState(true)
+  // chatHistory: Map<personId|'global', message[]>
+  const [chatHistory, setChatHistory] = useState(() => new Map())
 
   // ── initial load from Supabase ──────────────────────────────────────────
   useEffect(() => {
@@ -89,6 +92,9 @@ export function DataProvider({ children }) {
       year: input.year || null,
       photos: 0,
       sourceInterviewId: input.sourceInterviewId || null,
+      // Merge any AI-provided clip segments; adjacent/overlapping clips within
+      // 3 seconds are combined into a single range.
+      clips: mergeClips(input.clips ?? []),
     }
     setMemories((prev) => {
       const next = [memory, ...prev]
@@ -220,7 +226,7 @@ export function DataProvider({ children }) {
         personId: input.personId,
         n,
         date: input.date || todayLabel() + ', ' + new Date().getFullYear(),
-        status: 'transcribed',
+        status: 'started',
       }
       setInterviews((prev) => [interview, ...prev])
       setTranscripts((prev) => ({ ...prev, [id]: transcript }))
@@ -236,6 +242,30 @@ export function DataProvider({ children }) {
     },
     [interviews]
   )
+
+  // ── chat history ──────────────────────────────────────────────────────────
+
+  const getChatMessages = useCallback((personId) => {
+    return chatHistory.get(personId ?? 'global') ?? []
+  }, [chatHistory])
+
+  const setChatMessages = useCallback((personId, updater) => {
+    setChatHistory((prev) => {
+      const key = personId ?? 'global'
+      const current = prev.get(key) ?? []
+      const next = new Map(prev)
+      next.set(key, typeof updater === 'function' ? updater(current) : updater)
+      return next
+    })
+  }, [])
+
+  const clearChat = useCallback((personId) => {
+    setChatHistory((prev) => {
+      const next = new Map(prev)
+      next.delete(personId ?? 'global')
+      return next
+    })
+  }, [])
 
   // ── context value ─────────────────────────────────────────────────────────
 
@@ -258,6 +288,9 @@ export function DataProvider({ children }) {
       deleteTimelineEntry,
       addInterview,
       updateInterview,
+      getChatMessages,
+      setChatMessages,
+      clearChat,
     }),
     [
       loading,
@@ -277,6 +310,9 @@ export function DataProvider({ children }) {
       deleteTimelineEntry,
       addInterview,
       updateInterview,
+      getChatMessages,
+      setChatMessages,
+      clearChat,
     ]
   )
 

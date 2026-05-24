@@ -14,6 +14,7 @@ import { TopBar } from '@/components/top-bar'
 import { Icon, ChapterRule } from '@/components/icons'
 import PhotoUpload from '@/components/photo-upload'
 import { cn } from '@/lib/utils'
+import { PageTransition } from '@/components/page-transition'
 
 function Stat({ n, label }) {
   return (
@@ -53,7 +54,7 @@ export default function PersonScreen() {
 
   if (!person) {
     return (
-      <div className="paper-bg min-h-screen flex items-center justify-center px-8 text-center">
+      <PageTransition className="paper-bg min-h-screen flex items-center justify-center px-8 text-center">
         <div>
           <p className="font-serif italic text-[16px] text-ink-2">We can't find that person.</p>
           <button
@@ -63,7 +64,7 @@ export default function PersonScreen() {
             Back home
           </button>
         </div>
-      </div>
+      </PageTransition>
     )
   }
 
@@ -89,8 +90,10 @@ export default function PersonScreen() {
       )
     : interviews
 
+  const firstName = person.name.split(' ')[0]
+
   return (
-    <div className="paper-bg min-h-screen flex flex-col">
+    <PageTransition className="paper-bg min-h-screen flex flex-col">
       <TopBar
         left={
           <button onClick={() => navigate('/')} className="text-ink-2">
@@ -150,103 +153,147 @@ export default function PersonScreen() {
         </div>
       )}
 
-      <div className="px-5 pb-3">
-        <div className="relative rounded-2xl overflow-hidden shadow-photo group">
-          <Portrait person={person} ratio="16/10" />
-          {/* Camera button — tappable overlay to change the portrait photo */}
-          <button
-            onClick={() => setPhotoUploadOpen(true)}
-            aria-label="Change portrait photo"
-            className="absolute bottom-3 right-3 h-9 w-9 rounded-full bg-ink/70 backdrop-blur-sm flex items-center justify-center text-paper-50 opacity-80 hover:opacity-100 transition"
-          >
-            <Icon.Camera width="16" height="16" />
-          </button>
+      {/* ── Two-column layout: stacked on mobile, side-by-side on desktop ── */}
+      <div className="flex flex-col md:flex-row md:flex-1">
+
+        {/* ── Left col: portrait + info ── */}
+        <div className="px-5 pb-3 md:w-[288px] md:shrink-0 md:px-6 md:pt-5 md:pb-6 md:flex md:flex-col md:gap-4 md:border-r md:border-paper-400/60 md:sticky md:top-[52px] md:self-start md:max-h-[calc(100vh-100px)] md:overflow-y-auto">
+
+          <div className="relative rounded-2xl overflow-hidden shadow-photo group">
+            {/* Mobile: wide cinematic ratio */}
+            <div className="md:hidden">
+              <Portrait person={person} ratio="16/10" />
+            </div>
+            {/* Desktop: portrait ratio */}
+            <div className="hidden md:block">
+              <Portrait person={person} ratio="3/4" />
+            </div>
+            <button
+              onClick={() => setPhotoUploadOpen(true)}
+              aria-label="Change portrait photo"
+              className="absolute bottom-3 right-3 h-9 w-9 rounded-full bg-ink/70 backdrop-blur-sm flex items-center justify-center text-paper-50 opacity-80 hover:opacity-100 transition"
+            >
+              <Icon.Camera width="16" height="16" />
+            </button>
+          </div>
+
+          <div className="pt-4 md:pt-0">
+            <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-ink-3">
+              {person.relation || 'no relation set'} · b. {person.born}
+            </div>
+            <h1 className="font-serif text-[30px] leading-[1.05] text-ink mt-1 md:text-[26px]">
+              {firstName}{' '}
+              <span className="italic text-burgundy">
+                {person.name.split(' ').slice(1).join(' ')}
+              </span>
+            </h1>
+            {person.place && (
+              <p className="font-serif italic text-[14px] text-ink-2 mt-1.5">{person.place}</p>
+            )}
+
+            <div className="mt-3 flex items-center gap-4">
+              <Stat n={interviews.length} label="sessions" />
+              <span className="h-6 w-px bg-paper-400" />
+              <Stat n={memories.length} label="memories" />
+            </div>
+          </div>
+
+          {/* Desktop-only CTAs */}
+          <div className="hidden md:flex flex-col mt-auto gap-2">
+            <button
+              onClick={() => navigate('/connect', { state: { personId: person.id } })}
+              className="h-12 px-4 rounded-full bg-ink text-paper-50 shadow-[0_8px_24px_-8px_rgba(43,31,21,.5)] flex items-center justify-center gap-2.5"
+            >
+              <span className="h-7 w-7 rounded-full bg-burgundy flex items-center justify-center">
+                <Icon.Mic width="14" height="14" />
+              </span>
+              <span className="font-serif text-[15px]">New session with {firstName}</span>
+            </button>
+            <button
+              onClick={() => navigate(`/person/${person.id}/ask`)}
+              className="h-12 px-4 rounded-full border border-paper-400 bg-paper-50/60 text-ink-2 flex items-center justify-center gap-2.5 hover:bg-paper-50 transition"
+            >
+              <Icon.Chat width="16" height="16" />
+              <span className="font-serif text-[15px]">Ask about {firstName}</span>
+            </button>
+          </div>
         </div>
-        <div className="pt-4">
-          <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-ink-3">
-            {person.relation || 'no relation set'} · b. {person.born}
-          </div>
-          <h1 className="font-serif text-[30px] leading-[1.05] text-ink mt-1">
-            {person.name.split(' ')[0]}{' '}
-            <span className="italic text-burgundy">
-              {person.name.split(' ').slice(1).join(' ')}
-            </span>
-          </h1>
-          {person.place && (
-            <p className="font-serif italic text-[14px] text-ink-2 mt-1.5">{person.place}</p>
-          )}
 
-          <div className="mt-3 flex items-center gap-4">
-            <Stat n={interviews.length} label="sessions" />
-            <span className="h-6 w-px bg-paper-400" />
-            <Stat n={memories.length} label="memories" />
-          </div>
-
+        {/* ── Right col: search + tabs ── */}
+        <div className="flex-1 min-w-0 px-5 mt-2 pb-32 md:pb-8 md:px-6 md:pt-4">
           {searchOpen && (
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search timeline, memories, sessions…"
-              className="form-input mt-4"
+              className="form-input mb-4"
             />
           )}
+
+          <Tabs defaultValue="timeline" className="w-full">
+            <TabsList
+              variant="line"
+              className="w-full border-b border-paper-400 rounded-none p-0 h-auto bg-transparent"
+            >
+              <TabsTrigger
+                value="timeline"
+                className="flex-1 py-3.5 font-serif text-[15px] text-ink-3 data-[state=active]:text-ink rounded-none after:bg-burgundy data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger
+                value="memories"
+                className="flex-1 py-3.5 font-serif text-[15px] text-ink-3 data-[state=active]:text-ink rounded-none after:bg-burgundy data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                Memories
+                <span className="ml-1.5 font-mono text-[10px] align-top text-ink-4">
+                  {memories.length}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="interviews"
+                className="flex-1 py-3.5 font-serif text-[15px] text-ink-3 data-[state=active]:text-ink rounded-none after:bg-burgundy data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                Sessions
+                <span className="ml-1.5 font-mono text-[10px] align-top text-ink-4">
+                  {interviews.length}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="timeline" className="pt-4">
+              <TimelineTab entries={filteredTimeline} personId={person.id} hasAny={timeline.length > 0} />
+            </TabsContent>
+            <TabsContent value="memories" className="pt-4">
+              <MemoriesTab memories={filteredMemories} personId={person.id} hasAny={memories.length > 0} />
+            </TabsContent>
+            <TabsContent value="interviews" className="pt-4">
+              <InterviewsTab interviews={filteredInterviews} personId={person.id} hasAny={interviews.length > 0} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
-      <Tabs defaultValue="timeline" className="px-5 mt-2 pb-32">
-        <TabsList
-          variant="line"
-          className="w-full border-b border-paper-400 rounded-none p-0 h-auto bg-transparent"
-        >
-          <TabsTrigger
-            value="timeline"
-            className="flex-1 py-3.5 font-serif text-[15px] text-ink-3 data-[state=active]:text-ink rounded-none after:bg-burgundy data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            Timeline
-          </TabsTrigger>
-          <TabsTrigger
-            value="memories"
-            className="flex-1 py-3.5 font-serif text-[15px] text-ink-3 data-[state=active]:text-ink rounded-none after:bg-burgundy data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            Memories
-            <span className="ml-1.5 font-mono text-[10px] align-top text-ink-4">
-              {memories.length}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="interviews"
-            className="flex-1 py-3.5 font-serif text-[15px] text-ink-3 data-[state=active]:text-ink rounded-none after:bg-burgundy data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            Sessions
-            <span className="ml-1.5 font-mono text-[10px] align-top text-ink-4">
-              {interviews.length}
-            </span>
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="timeline" className="pt-4">
-          <TimelineTab entries={filteredTimeline} personId={person.id} hasAny={timeline.length > 0} />
-        </TabsContent>
-        <TabsContent value="memories" className="pt-4">
-          <MemoriesTab memories={filteredMemories} personId={person.id} hasAny={memories.length > 0} />
-        </TabsContent>
-        <TabsContent value="interviews" className="pt-4">
-          <InterviewsTab interviews={filteredInterviews} personId={person.id} hasAny={interviews.length > 0} />
-        </TabsContent>
-      </Tabs>
-
-      <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
-        <div className="mx-auto max-w-[430px] px-5 pb-7 flex justify-center">
+      {/* ── Mobile-only FAB ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 pointer-events-none">
+        <div className="mx-auto max-w-[430px] px-5 pb-7 flex items-center justify-center gap-3">
           <button
-            onClick={() => navigate('/new')}
+            onClick={() => navigate('/connect', { state: { personId: person.id } })}
             className="pointer-events-auto h-14 px-5 rounded-full bg-ink text-paper-50 shadow-[0_10px_28px_-10px_rgba(43,31,21,.6)] flex items-center gap-2.5"
           >
             <span className="h-8 w-8 rounded-full bg-burgundy flex items-center justify-center">
               <Icon.Mic width="16" height="16" />
             </span>
             <span className="font-serif text-[15px]">
-              New session with {person.name.split(' ')[0]}
+              New session with {firstName}
             </span>
+          </button>
+          <button
+            onClick={() => navigate(`/person/${person.id}/ask`)}
+            className="pointer-events-auto h-14 w-14 rounded-full bg-paper-50 border border-paper-400 shadow-card text-ink-2 flex items-center justify-center shrink-0"
+            aria-label={`Ask about ${firstName}`}
+          >
+            <Icon.Chat width="20" height="20" />
           </button>
         </div>
       </div>
@@ -284,7 +331,7 @@ export default function PersonScreen() {
       {photoUploadOpen && (
         <PhotoUpload person={person} onClose={() => setPhotoUploadOpen(false)} />
       )}
-    </div>
+    </PageTransition>
   )
 }
 
@@ -442,9 +489,18 @@ function InterviewsTab({ interviews, personId, hasAny }) {
             <div className="flex-1 min-w-0">
               <div className="font-serif text-[16px] text-ink truncate">{it.date}</div>
               <div className="mt-1 flex items-center gap-2">
-                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-ink-3">
-                  {it.answered}/{it.questions} answered
-                </span>
+                {it.active ? (
+                  <>
+                    <span className="h-1.5 w-1.5 rounded-full bg-burgundy animate-pulse" />
+                    <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-burgundy">
+                      recording
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-ink-3">
+                    transcribed
+                  </span>
+                )}
               </div>
             </div>
             <Icon.Back width="18" height="18" className="text-ink-3 rotate-180 shrink-0" />
@@ -470,7 +526,7 @@ function EmptyState({ title, body, small }) {
 
 function PersonSkeleton() {
   return (
-    <div className="paper-bg min-h-screen flex flex-col px-5 pt-14">
+    <PageTransition className="paper-bg min-h-screen flex flex-col px-5 pt-14">
       <div className="rounded-2xl bg-paper-200 aspect-[16/10] animate-pulse" />
       <div className="mt-5 h-3 w-24 rounded-full bg-paper-200 animate-pulse" />
       <div className="mt-3 h-8 w-3/4 rounded-md bg-paper-200 animate-pulse" />
@@ -486,6 +542,6 @@ function PersonSkeleton() {
           <div key={i} className="rounded-2xl bg-paper-200/80 h-24 animate-pulse" />
         ))}
       </div>
-    </div>
+    </PageTransition>
   )
 }

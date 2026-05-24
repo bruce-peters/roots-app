@@ -157,5 +157,20 @@
   min-height: 100vh;
   background: #f1e6ce;
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
+}
+
+@media (min-width: 768px) {
+  .app-shell {
+    padding: 24px 0;
+    align-items: flex-start;
+  }
+  .app-frame {
+    max-width: 960px;
+    height: calc(100vh - 48px);
+    overflow-y: auto;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.55),
+      0 6px 18px rgba(0, 0, 0, 0.35);
+  }
 }

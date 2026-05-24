@@ -422,11 +422,6 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/get-interview-questions/index.ts"
 
-[functions.get-interview-started]
-enabled = true
-verify_jwt = false
-entrypoint = "./functions/get-interview-started/index.ts"
-
 [functions.suggest-next-questions]
 enabled = true
 verify_jwt = false
@@ -436,3 +431,13 @@ entrypoint = "./functions/suggest-next-questions/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/process-interview/index.ts"
+
+[functions.embed-person]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/embed-person/index.ts"
+
+[functions.chat]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/chat/index.ts"
