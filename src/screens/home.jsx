@@ -116,7 +116,7 @@ export default function HomeScreen() {
         </div>
 
         <div className="px-5 pb-4 flex items-center gap-2">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar grow">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar grow py-1">
             <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
               All · {counts.all}
             </FilterChip>
