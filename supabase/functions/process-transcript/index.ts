@@ -17,10 +17,9 @@ import {
 } from "../_shared/active-interview.ts";
 
 // Minimum new transcript chars since last suggestion before we'll fire again.
-// ~1000 chars is roughly 2–3 minutes of elderly speech.
-const SUGGEST_DELTA_CHARS = 300;
+const SUGGEST_DELTA_CHARS = 5;
 // Minimum wall-clock gap between suggestions, regardless of delta.
-const SUGGEST_MIN_INTERVAL_MS = 10_000;
+const SUGGEST_MIN_INTERVAL_MS = 1_000;
 
 // deno-lint-ignore no-explicit-any
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;

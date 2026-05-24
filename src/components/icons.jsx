@@ -76,6 +76,9 @@ export const Icon = {
       <path d="m12 3 2.6 5.6 6.2.8-4.6 4.3 1.2 6.1L12 17l-5.4 2.8 1.2-6.1L3.2 9.4l6.2-.8z" />
     </svg>
   ),
+  Sprout: ({ width = 20, height = 20, className = '', alt = '', ...p }) => (
+    <img src="/sprout.svg" width={width} height={height} className={className} alt={alt} aria-hidden="true" {...p} />
+  ),
 }
 
 export function LiveDot({ className = '' }) {

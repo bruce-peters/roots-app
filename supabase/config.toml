@@ -441,3 +441,8 @@ entrypoint = "./functions/embed-person/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/chat/index.ts"
+
+[functions.get-interview-status]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/get-interview-status/index.ts"

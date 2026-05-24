@@ -185,10 +185,11 @@ export default function AskScreen() {
         }
         title={
           <span className="font-serif text-[15px] text-ink">
-            Ask{' '}
-            <span className="italic text-burgundy">
-              {person ? firstName : 'across everyone'}
-            </span>
+            {person ? (
+              <>Ask <span className="italic text-burgundy">Sprout</span> about {firstName}</>
+            ) : (
+              <>Chat with <span className="italic text-burgundy">Sprout</span></>
+            )}
           </span>
         }
         right={
@@ -212,8 +213,8 @@ export default function AskScreen() {
           <div className="pt-6">
             <p className="font-serif italic text-[15px] text-ink-3 leading-snug">
               {person
-                ? `Ask anything about ${firstName}'s life — I'll cite the sessions and memories that back up what I say.`
-                : `Ask anything about your relatives — I'll pull from across everyone's stories and cite the sources.`}
+                ? `Ask Sprout anything about ${firstName}'s life — Sprout will cite the sessions and memories that back up what it says.`
+                : `Ask Sprout anything about your relatives — Sprout will pull from across everyone's stories and cite the sources.`}
             </p>
             <div className="mt-5 flex flex-col gap-2">
               {suggestions.map((s) => (
@@ -252,7 +253,7 @@ export default function AskScreen() {
         value={input}
         onChange={setInput}
         onSubmit={() => send()}
-        placeholder={person ? `Ask about ${firstName}…` : 'Ask about your relatives…'}
+        placeholder={person ? `Ask Sprout about ${firstName}…` : 'Ask Sprout about your relatives…'}
         disabled={streaming}
       />
     </PageTransition>

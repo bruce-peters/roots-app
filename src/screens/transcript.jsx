@@ -45,6 +45,74 @@ function fmt(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+// ── Shared video player element ──────────────────────────────────────────────
+// Must live outside TranscriptScreen so React doesn't remount the <video> on
+// every state update (position ticks, etc.).
+
+function VideoPanel({ videoRef, videoSrc, videoLoading, person, playing, position, progressPct, togglePlay, seekTo, fmt }) {
+  return (
+    <div className="relative rounded-2xl overflow-hidden shadow-photo">
+      {videoSrc ? (
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          preload="auto"
+          playsInline
+          style={{
+            display: 'block',
+            width: '100%',
+            aspectRatio: '16/10',
+            objectFit: 'cover',
+            filter: 'sepia(0.35)',
+          }}
+        />
+      ) : (
+        <Portrait person={person} ratio="16/10" />
+      )}
+
+      {/* Video loading pill — shown while polling for the video file */}
+      {!videoSrc && videoLoading && (
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-ink/70 text-paper-50 rounded-full px-2.5 py-1 pointer-events-none">
+          <div className="h-3 w-3 rounded-full border border-paper-50/35 border-t-paper-50 animate-spin shrink-0" />
+          <span className="font-mono text-[9px] tracking-[0.14em] uppercase">Processing</span>
+        </div>
+      )}
+
+      <div className="absolute inset-0 flex items-center justify-center">
+        <button
+          onClick={togglePlay}
+          className="h-14 w-14 rounded-full bg-paper-50/95 text-ink flex items-center justify-center shadow-photo"
+          aria-label={playing ? 'Pause' : 'Play'}
+        >
+          {playing ? (
+            <Icon.Pause width="22" height="22" />
+          ) : (
+            <Icon.Play width="22" height="22" />
+          )}
+        </button>
+      </div>
+
+      <div className="absolute left-3 right-3 bottom-3 flex items-center gap-3">
+        <span className="font-mono text-[10px] text-paper-50 tracking-[0.14em] bg-ink/45 px-2 py-0.5 rounded-full">
+          {fmt(position)}
+        </span>
+        <div
+          className="flex-1 h-1 rounded-full bg-paper-50/30 overflow-hidden cursor-pointer"
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            seekTo((e.clientX - rect.left) / rect.width)
+          }}
+        >
+          <div
+            className="h-full bg-paper-50 transition-[width] duration-100 ease-linear"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TranscriptScreen() {
   const { id, interviewId } = useParams()
   const navigate = useNavigate()
@@ -245,63 +313,6 @@ export default function TranscriptScreen() {
 
   const progressPct = total ? Math.min(100, (position / total) * 100) : 0
 
-  // ── Shared video player element ──────────────────────────────────────────────
-  function VideoPanel() {
-    return (
-      <div className="relative rounded-2xl overflow-hidden shadow-photo">
-        {it.video ? (
-          <video
-            ref={videoRef}
-            src={it.video}
-            preload="auto"
-            playsInline
-            style={{
-              display: 'block',
-              width: '100%',
-              aspectRatio: '16/10',
-              objectFit: 'cover',
-              filter: 'sepia(0.35)',
-            }}
-          />
-        ) : (
-          <Portrait person={person} ratio="16/10" />
-        )}
-
-        <div className="absolute inset-0 flex items-center justify-center">
-          <button
-            onClick={togglePlay}
-            className="h-14 w-14 rounded-full bg-paper-50/95 text-ink flex items-center justify-center shadow-photo"
-            aria-label={playing ? 'Pause' : 'Play'}
-          >
-            {playing ? (
-              <Icon.Pause width="22" height="22" />
-            ) : (
-              <Icon.Play width="22" height="22" />
-            )}
-          </button>
-        </div>
-
-        <div className="absolute left-3 right-3 bottom-3 flex items-center gap-3">
-          <span className="font-mono text-[10px] text-paper-50 tracking-[0.14em] bg-ink/45 px-2 py-0.5 rounded-full">
-            {fmt(position)}
-          </span>
-          <div
-            className="flex-1 h-1 rounded-full bg-paper-50/30 overflow-hidden cursor-pointer"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              seekTo((e.clientX - rect.left) / rect.width)
-            }}
-          >
-            <div
-              className="h-full bg-paper-50 transition-[width] duration-100 ease-linear"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <PageTransition className="paper-bg min-h-screen flex flex-col">
       <TopBar
@@ -348,19 +359,32 @@ export default function TranscriptScreen() {
         />
       )}
 
+      {/* ── Sticky video panel — lives outside the columns so its containing block
+           spans the full page height (fixes sticky on mobile) ── */}
+      <div className="sticky top-[52px] z-20 paper-bg w-full px-4 pt-4 pb-3 md:w-[360px] md:px-5 md:pt-5 md:self-start">
+        <VideoPanel
+          videoRef={videoRef}
+          videoSrc={it.video}
+          videoLoading={!it.video}
+          person={person}
+          playing={playing}
+          position={position}
+          progressPct={progressPct}
+          togglePlay={togglePlay}
+          seekTo={seekTo}
+          fmt={fmt}
+        />
+      </div>
+
       {/* ── Two-column layout: stacked on mobile, side-by-side on desktop ── */}
       <div className="flex flex-col md:flex-row md:flex-1">
 
-        {/* ── Left col: video + date + memory clips (desktop sticky panel) ── */}
-        <div className="md:w-[360px] md:shrink-0 md:sticky md:top-[52px] md:self-start md:max-h-[calc(100vh-100px)] md:overflow-y-auto md:border-r md:border-paper-400/60 md:flex md:flex-col">
-
-          {/* Video: sticky on mobile, part of sticky left col on desktop */}
-          <div className="sticky top-[52px] z-20 md:static md:z-auto self-stretch w-full px-4 pt-4 pb-3 md:px-5 md:pt-5">
-            <VideoPanel />
-          </div>
+        {/* ── Left col: date + memory clips (desktop sticky panel) ── */}
+        {/* top = 52px (TopBar) + ~232px (video panel) = 284px */}
+        <div className="md:w-[360px] md:shrink-0 md:sticky md:top-[284px] md:self-start md:max-h-[calc(100vh-284px)] md:overflow-y-auto md:border-r md:border-paper-400/60 md:flex md:flex-col">
 
           {/* Date heading */}
-          <div className="px-5 pt-2 pb-2 md:pt-0">
+          <div className="px-5 pt-2 pb-2 md:pt-2">
             <h2 className="font-serif text-[22px] leading-[1.1] text-ink">{it.date}</h2>
           </div>
 

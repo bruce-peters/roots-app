@@ -213,8 +213,8 @@ export default function PersonScreen() {
               onClick={() => navigate(`/person/${person.id}/ask`)}
               className="h-12 px-4 rounded-full border border-paper-400 bg-paper-50/60 text-ink-2 flex items-center justify-center gap-2.5 hover:bg-paper-50 transition"
             >
-              <Icon.Chat width="16" height="16" />
-              <span className="font-serif text-[15px]">Ask about {firstName}</span>
+              <Icon.Sprout width="20" height="20" />
+              <span className="font-serif text-[15px]">Ask Sprout about {firstName}</span>
             </button>
           </div>
         </div>
@@ -291,9 +291,9 @@ export default function PersonScreen() {
           <button
             onClick={() => navigate(`/person/${person.id}/ask`)}
             className="pointer-events-auto h-14 w-14 rounded-full bg-paper-50 border border-paper-400 shadow-card text-ink-2 flex items-center justify-center shrink-0"
-            aria-label={`Ask about ${firstName}`}
+            aria-label={`Ask Sprout about ${firstName}`}
           >
-            <Icon.Chat width="20" height="20" />
+            <Icon.Sprout width="20" height="20" />
           </button>
         </div>
       </div>

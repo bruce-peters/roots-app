@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useMemo, useCallback, useEffect } 
 import { paletteFor, accentFor } from '@/lib/portrait'
 import { mergeClips } from '@/lib/utils'
 import * as db from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 const DataContext = createContext(null)
 
@@ -31,6 +32,157 @@ export function DataProvider({ children }) {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
+  }, [])
+
+  // ── realtime subscriptions ───────────────────────────────────────────────
+  // Keep people/memories/timeline/interviews in sync with any server-side
+  // writes (e.g. process-interview edge function updating memories/timeline
+  // after a session, or the recording device updating the interview row).
+  useEffect(() => {
+    // ── people table → drives memory + timeline updates ──────────────────
+    const peopleCh = supabase
+      .channel('rt-people')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'people' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new
+            setPeople((prev) => {
+              if (prev.some((p) => p.id === row.id)) return prev
+              return [...prev, db.rowToPerson(row, [])]
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new
+            const mems = Array.isArray(row.memories) ? row.memories : []
+            const tls = Array.isArray(row.timeline) ? row.timeline : []
+
+            // Rebuild memories for this person from the authoritative JSONB.
+            setMemories((prev) => [
+              ...prev.filter((m) => m.personId !== row.id),
+              ...mems.map((m) => ({ ...m, personId: row.id })),
+            ])
+
+            // Rebuild timeline for this person.
+            setTimeline((prev) => [
+              ...prev.filter((e) => e.personId !== row.id),
+              ...tls.map((e, i) => ({
+                ...e,
+                id: e.id ?? `t-${row.id}-${i}`,
+                personId: row.id,
+              })),
+            ])
+
+            // Sync scalar person fields and derived counts.
+            setPeople((prev) =>
+              prev.map((p) => {
+                if (p.id !== row.id) return p
+                return {
+                  ...p,
+                  name: row.name,
+                  nick: row.nick || '',
+                  born: row.dob ? new Date(row.dob).getUTCFullYear() : null,
+                  place: row.place || '',
+                  relation: row.relation || '',
+                  photo_url: row.photo_url || null,
+                  memories: mems.length,
+                }
+              })
+            )
+          } else if (payload.eventType === 'DELETE') {
+            const id = payload.old.id
+            setPeople((prev) => prev.filter((p) => p.id !== id))
+            setMemories((prev) => prev.filter((m) => m.personId !== id))
+            setTimeline((prev) => prev.filter((e) => e.personId !== id))
+            setInterviews((prev) => {
+              const removed = prev.filter((it) => it.personId === id).map((it) => it.id)
+              setTranscripts((tx) => {
+                const next = { ...tx }
+                removed.forEach((rid) => delete next[rid])
+                return next
+              })
+              return prev.filter((it) => it.personId !== id)
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    // ── interviews table ─────────────────────────────────────────────────
+    const interviewsCh = supabase
+      .channel('rt-interviews')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'interviews' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new
+            setInterviews((prev) => {
+              // Skip if already present (optimistic local insert).
+              if (prev.some((it) => it.id === row.id)) return prev
+              const n = prev.filter((it) => it.personId === row.person_id).length + 1
+              const interview = db.rowToInterview(row, n)
+              setTranscripts((tx) => ({
+                ...tx,
+                [row.id]: typeof row.transcript === 'string' ? row.transcript : '',
+              }))
+              setPeople((ps) =>
+                ps.map((p) =>
+                  p.id === row.person_id
+                    ? { ...p, sessions: p.sessions + 1, lastSession: todayLabel() }
+                    : p
+                )
+              )
+              return [...prev, interview]
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new
+            setInterviews((prev) =>
+              prev.map((it) => {
+                if (it.id !== row.id) return it
+                return {
+                  ...it,
+                  status: row.status ?? it.status,
+                  active: row.active ?? it.active,
+                  video: row.video ?? it.video,
+                  transcriptWords: Array.isArray(row.transcript_words)
+                    ? row.transcript_words
+                    : it.transcriptWords,
+                }
+              })
+            )
+            if (typeof row.transcript === 'string') {
+              setTranscripts((prev) => ({ ...prev, [row.id]: row.transcript }))
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const id = payload.old.id
+            setInterviews((prev) => {
+              const target = prev.find((it) => it.id === id)
+              if (target) {
+                setPeople((ps) =>
+                  ps.map((p) =>
+                    p.id === target.personId
+                      ? { ...p, sessions: Math.max(0, p.sessions - 1) }
+                      : p
+                  )
+                )
+              }
+              return prev.filter((it) => it.id !== id)
+            })
+            setTranscripts((prev) => {
+              const next = { ...prev }
+              delete next[id]
+              return next
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(peopleCh)
+      supabase.removeChannel(interviewsCh)
+    }
   }, [])
 
   // ── people ───────────────────────────────────────────────────────────────

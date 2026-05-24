@@ -23,7 +23,7 @@ import { accentFor, paletteFor } from '@/lib/portrait'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-function rowToPerson(row, interviewsForPerson) {
+export function rowToPerson(row, interviewsForPerson) {
   const born = row.dob ? new Date(row.dob).getUTCFullYear() : null
   const lastInterview = interviewsForPerson.at(-1) // already sorted asc
   const lastSession = lastInterview
@@ -47,7 +47,7 @@ function rowToPerson(row, interviewsForPerson) {
   }
 }
 
-function rowToInterview(row, n) {
+export function rowToInterview(row, n) {
   return {
     id: row.id,
     personId: row.person_id,
