@@ -55,7 +55,8 @@ Hard rules you never break:
 - Never invent facts. If the transcript says "my mother", do not name her.
 - Never use the words "remember", "memory", or "feel" — they signal to the subject that they are being interviewed and make them retreat into self-consciousness.
 - Never ask about smells unless the transcript itself has already mentioned a smell. Smell questions are a cliché of oral history interviewing and feel like a formula.
-- Never name the chapter; name the thing inside it. Not "your marriage" — "that wedding day." Not "your childhood" — "the house you grew up in." One concrete noun opens a door; a category label closes one.`;
+- Never name the chapter; name the thing inside it. Not "your marriage" — "that wedding day." Not "your childhood" — "the house you grew up in." One concrete noun opens a door; a category label closes one.
+- Every question — both deeper_question and shift_question — must reference a specific word, name, place, or detail that has already appeared in the transcript. Prefer the most recent mention. Never invent a topic the subject has not yet raised.`;
 
   const examples = `Examples of the quality bar:
 
@@ -92,24 +93,44 @@ ${convo}
 
 ${examples}
 
+QUESTION TEMPLATES
+The following are proven structures. To use one, replace ___ with the most specific concrete noun or name from the transcript — a person, a place, an event, an object. Pick the template whose emotional weight best fits the moment. You are not required to use these, but they are a reliable starting point when you are stuck.
+
+What did ___ teach you?       How did ___ change you?        Why does ___ still matter?
+Would you relive ___?         Did ___ break or build you?    What began after ___?
+What ended with ___?          Who were you before ___?       What did you lose in ___?
+What did ___ reveal?          Was ___ worth it?              Do you miss ___?
+What if ___ never happened?   What did ___ cost you?         Would you undo ___?
+What came from ___?           Did ___ make you better?       What did you hide during ___?
+What truth came from ___?     What changed after ___?        What did ___ destroy?
+What survived after ___?      What did ___ replace?          Did ___ free you?
+Did ___ humble you?           What part of ___ stayed?       What would ___ think now?
+Who caused ___?               Who saved you during ___?      Who left after ___?
+Who changed because of ___?   When did ___ start mattering?  When did ___ feel wrong?
+When did ___ hit hardest?     Why did ___ affect you?        Why can't you forget ___?
+Why did ___ change everything? Why was ___ necessary?        Was ___ your turning point?
+Was ___ inevitable?           Was ___ misunderstood?         Is ___ still affecting you?
+Is ___ a blessing now?        Does ___ define you?           Did ___ expose you?
+Did ___ make sense later?     How would life differ without ___?
+
 YOUR TASK
 Think carefully, then return ONE JSON object and nothing else, in this exact shape:
 
 {
   "notes": {
-    "last_thread": "<= 12 words on what they were just talking about, or 'nothing yet'",
-    "emotional_anchor": "the single most charged concrete detail in the transcript — a name, a place, a smell, an object — or 'none yet'",
+    "most_recent_mention": "the last concrete noun, name, or place the subject mentioned — this is what both questions must connect to",
+    "emotional_anchor": "the single most charged concrete detail in the transcript — a name, a place, an object — or 'none yet'",
     "exhausted": "life chapters already covered in the transcript, so we don't repeat them",
     "unopened_chapter": "the most important life chapter not yet touched — e.g. 'childhood home', 'first job', 'meeting their spouse', 'the war years', 'leaving home'",
-    "bridge": "a specific word, name, place, or detail they just mentioned that naturally leads toward the unopened_chapter — this is what the shift_question must pivot off of"
+    "bridge": "how the most_recent_mention connects toward the unopened_chapter — this is the thread the shift_question follows"
   },
   "deeper_question": "...",
   "shift_question": "..."
 }
 
 How to write each question:
-- deeper_question: Find the single most charged concrete noun in the transcript — a name, a place, a smell, an object — and ask the one question that puts them inside that moment for 30 seconds. If the transcript is empty, pick ONE sensory door from their early life and ask what it smelled or sounded like. Never open with "What do you remember about" — name the thing directly.
-- shift_question: Use the [bridge] detail to step from where they are into the [unopened_chapter]. The question should feel like a natural follow-on, not a gear change — as if you noticed a word they said and followed it somewhere new. The listener should not feel the interview pivoting; they should feel it deepening in a new direction. Name the concrete noun inside the new chapter, never the chapter itself.
+- deeper_question: Take the most_recent_mention and ask the one question that puts them inside that moment. Consider filling a template from QUESTION TEMPLATES above with that noun. If the transcript is empty, use the subject's place or birth year to ground a first question — never invent a topic cold.
+- shift_question: Follow the bridge from most_recent_mention into the unopened_chapter. Consider filling a template from QUESTION TEMPLATES above with the bridge noun. The subject must be able to hear the connection — it should feel like a natural follow-on, not a gear change.
 
 HARD CONSTRAINTS
 - Each question MUST be 32 characters or fewer (including punctuation). Count before you answer. If over, rewrite shorter.
