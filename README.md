@@ -2,6 +2,8 @@
 
 A mobile web app that works alongside a physical recording device to preserve the life stories of elderly relatives. You start a session from your phone, set it down, and the device records the conversation. After the session, AI processes the recording into a structured timeline, named memories, and a searchable history you can browse or chat with.
 
+**Live app:** https://roots-app-rouge.vercel.app (open on a phone or a ~430px-wide window)
+
 ## What it does
 
 Many families never capture the stories their elderly relatives carry. Roots pairs with a dedicated hardware box (camera and microphone) that sits on the table during a conversation. The companion app (this repo) lets you set up a session, suggests interview themes and questions, then tells you to put your phone away so the subject is not distracted. Once the recording finishes, a server-side pipeline transcribes the audio via Whisper, sends the transcript to GPT-4o to extract memories and place life events on a chronological timeline, and syncs the results back to the app in real time. You can then browse that person's timeline by decade, read individual memory cards, rewatch session recordings, and ask the AI questions about what your relative has shared across all their sessions.
@@ -62,11 +64,13 @@ The app is a React SPA. All state is managed via a single `DataProvider` context
 
 ## Getting started
 
-**Prerequisites:** Node 18+, a Supabase project, an OpenAI API key.
+**Prerequisites:** Node 18+, a Supabase project (the free tier works), an OpenAI API key (only needed by the edge functions).
 
 ```bash
-# 1. Install dependencies
-npm install
+# 1. Clone and install dependencies (also installs the Supabase CLI as a dev dependency)
+git clone https://github.com/bruce-peters/roots-app.git
+cd roots-app
+npm ci   # or: npm install
 
 # 2. Copy env template and fill in your Supabase project URL and anon key
 cp .env.example .env
@@ -79,13 +83,17 @@ npx supabase login
 npx supabase link --project-ref <your-project-ref>
 npm run db:push
 
-# 4. Deploy edge functions (requires OPENAI_API_KEY set in Supabase dashboard)
+# 4. Set the OpenAI key as a function secret, then deploy all edge functions
+#    (verify_jwt = false for each function is configured in supabase/config.toml)
+npx supabase secrets set OPENAI_API_KEY=sk-...
 npm run fn:deploy
 
 # 5. Start the dev server
 npm run dev
 # → http://localhost:5173
 ```
+
+The `.env` file is required. Without it, the page is blank and the console shows `supabaseUrl is required.` The migrations create the tables, the `vector` extension, and the `interview-videos` and `profile-photos` storage buckets. The endpoints and the device flow for each edge function are documented in [`supabase/functions/README.md`](supabase/functions/README.md).
 
 **Production build:**
 
@@ -144,10 +152,27 @@ supabase/
     embed-person/          # index a person's memories/timeline into pgvector chunks
     get-interview-questions/  # AI-suggested questions for a session
     suggest-next-questions/   # real-time question suggestions during a session
+    process-transcript/       # device posts the growing live transcript here
     get-interview-status/     # poll interview row for status updates
     upload-video/             # handle video upload from the recording device
+    README.md                 # endpoint reference + device session lifecycle
+
+recorder.py                 # mock recording device (Python CLI), see below
 ```
+
+## Mock recording device (`recorder.py`)
+
+`recorder.py` is a Python CLI that stands in for the hardware box. It records the mic, transcribes locally with faster-whisper, and posts the growing transcript to `process-transcript`. It also polls `get-interview-questions` and shows the suggested follow-ups in a terminal UI. Unless you pass `--no-video`, it records the webcam and sends the video to `upload-video` at the end. It needs an active interview, so start one from the app's Connect screen first.
+
+```bash
+pip install faster-whisper sounddevice numpy requests rich opencv-python
+python recorder.py --help
+python recorder.py                    # real mic + webcam
+python recorder.py --mock --no-video  # canned transcript, no mic/camera (needs only requests + rich)
+```
+
+`SUPABASE_URL` and `ANON_KEY` are hard-coded near the top of the file and point at the original project. Change them to your project's values before you run it. (`--help` was tested here. The mic, webcam and network paths need real hardware and were not tested.)
 
 ## Status
 
-Active development. The React frontend and Supabase backend are both wired (this is past the fake-data prototype stage). The hardware device side (video streaming, the recorder itself) is not in this repo. All AI features (Whisper, GPT-4o extraction, RAG chat) are implemented in Supabase Edge Functions and are functional given a valid `OPENAI_API_KEY`. The `recorder.py` file in the repo root appears to be a prototype script for the hardware device side.
+Active development. The React frontend and Supabase backend are both wired (this is past the fake-data prototype stage). The hardware device side (video streaming, the recorder itself) is not in this repo. All AI features (Whisper, GPT-4o extraction, RAG chat) are implemented in Supabase Edge Functions and are functional given a valid `OPENAI_API_KEY`. `recorder.py` in the repo root is a mock of the device side (see above).
